@@ -1,0 +1,348 @@
+<!DOCTYPE html>
+<html lang="bn">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>BkChatAi</title>
+  <style>
+    * { box-sizing: border-box; }
+    :root{
+      --bg:#0b1020;
+      --panel:#11182d;
+      --panel-2:#182135;
+      --text:#ffffff;
+      --muted:#cbd5e1;
+      --muted-2:#94a3b8;
+      --green:#22c55e;
+      --green-dark:#16a34a;
+      --blue:#1d4ed8;
+      --border:rgba(255,255,255,0.08);
+    }
+    body{
+      margin:0;
+      font-family:Arial,sans-serif;
+      background:var(--bg);
+      color:var(--text);
+      height:100vh;
+      display:flex;
+      flex-direction:column;
+    }
+    header{
+      display:flex;
+      justify-content:space-between;
+      align-items:center;
+      padding:14px 18px;
+      background:var(--panel);
+      border-bottom:1px solid var(--border);
+      gap:10px;
+    }
+    .brand{
+      display:flex;
+      align-items:center;
+      gap:10px;
+      min-width:0;
+    }
+    .brand-badge{
+      width:38px;
+      height:38px;
+      border-radius:12px;
+      background:linear-gradient(135deg, var(--green-dark), var(--green));
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      font-weight:bold;
+      box-shadow:0 8px 20px rgba(34,197,94,0.25);
+      flex-shrink:0;
+    }
+    .brand h1{
+      margin:0;
+      font-size:20px;
+      white-space:nowrap;
+      overflow:hidden;
+      text-overflow:ellipsis;
+    }
+    .top-actions{
+      display:flex;
+      gap:10px;
+      flex-wrap:wrap;
+      justify-content:flex-end;
+    }
+    button{
+      border:none;
+      cursor:pointer;
+      border-radius:10px;
+      padding:10px 14px;
+      font-weight:600;
+      transition:0.2s ease;
+    }
+    .btn-green{
+      background:var(--green);
+      color:#fff;
+    }
+    .btn-green:hover{ background:var(--green-dark); }
+    .btn-dark{
+      background:#1a233a;
+      color:#fff;
+      border:1px solid var(--border);
+    }
+    .btn-dark:hover{ background:#202b47; }
+
+    #chat{
+      flex:1;
+      overflow-y:auto;
+      padding:20px;
+      max-width:950px;
+      width:100%;
+      margin:0 auto;
+    }
+    .welcome-box{
+      background:linear-gradient(180deg, rgba(34,197,94,0.08), rgba(255,255,255,0.02));
+      border:1px solid var(--border);
+      border-radius:18px;
+      padding:18px;
+      margin-bottom:20px;
+    }
+    .welcome-box h2{
+      margin:0 0 8px;
+      font-size:24px;
+    }
+    .welcome-box p{
+      margin:0;
+      color:var(--muted);
+      line-height:1.6;
+    }
+
+    .message{
+      max-width:78%;
+      padding:14px 16px;
+      border-radius:16px;
+      margin:12px 0;
+      line-height:1.6;
+      white-space:pre-wrap;
+      word-wrap:break-word;
+      box-shadow:0 8px 24px rgba(0,0,0,0.12);
+    }
+    .user{
+      margin-left:auto;
+      background:var(--blue);
+      color:#fff;
+      border-bottom-right-radius:6px;
+    }
+    .bot{
+      margin-right:auto;
+      background:var(--panel-2);
+      color:#e5e7eb;
+      border:1px solid rgba(255,255,255,0.06);
+      border-bottom-left-radius:6px;
+    }
+    .typing{
+      opacity:0.8;
+      font-style:italic;
+    }
+
+    .input-wrap{
+      padding:16px;
+      background:var(--panel);
+      border-top:1px solid var(--border);
+    }
+    .input-inner{
+      max-width:950px;
+      margin:0 auto;
+      display:flex;
+      gap:12px;
+      align-items:center;
+    }
+    #messageInput{
+      flex:1;
+      padding:14px 16px;
+      border-radius:14px;
+      border:1px solid var(--border);
+      background:#0f172a;
+      color:#fff;
+      font-size:15px;
+      outline:none;
+    }
+    #messageInput::placeholder{ color:var(--muted-2); }
+    .send-btn{ min-width:110px; }
+
+    .modal{
+      position:fixed;
+      inset:0;
+      background:rgba(0,0,0,0.55);
+      display:none;
+      align-items:center;
+      justify-content:center;
+      padding:18px;
+      z-index:50;
+    }
+    .modal.active{ display:flex; }
+    .modal-card{
+      width:100%;
+      max-width:720px;
+      background:var(--panel);
+      border:1px solid var(--border);
+      border-radius:20px;
+      padding:22px;
+      box-shadow:0 20px 60px rgba(0,0,0,0.35);
+      max-height:90vh;
+      overflow-y:auto;
+    }
+    .modal-card h2{ margin-top:0; margin-bottom:12px; }
+    .modal-card p{
+      color:#d1d5db;
+      line-height:1.7;
+    }
+    .info-box{
+      background:#0b1224;
+      border:1px solid rgba(255,255,255,0.06);
+      padding:14px;
+      border-radius:14px;
+      margin-top:14px;
+    }
+    .link{
+      color:#4ade80;
+      text-decoration:none;
+    }
+    .link:hover{ text-decoration:underline; }
+
+    @media (max-width:700px){
+      .message{ max-width:92%; }
+      .brand h1{ font-size:17px; }
+      .input-inner{ flex-direction:column; }
+      .send-btn{ width:100%; }
+      button{ padding:9px 12px; }
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <div class="brand">
+      <div class="brand-badge">Bk</div>
+      <h1>BkChatAi</h1>
+    </div>
+
+    <div class="top-actions">
+      <button class="btn-dark" onclick="openDeveloper()">Developer</button>
+      <button class="btn-green" onclick="startNewChat()">New Chat</button>
+    </div>
+  </header>
+
+  <main id="chat">
+    <div class="welcome-box">
+      <h2>স্বাগতম BkChatAi তে</h2>
+      <p>
+        এখানে তুমি AI এর সাথে কথা বলতে পারবে।<br>
+        যদি কেউ জিজ্ঞেস করে <b>“তোমাকে কে বানিয়েছে?”</b> তাহলে AI তোমার নাম বলবে।
+      </p>
+    </div>
+  </main>
+
+  <div class="input-wrap">
+    <div class="input-inner">
+      <input id="messageInput" type="text" placeholder="এখানে মেসেজ লিখো..." onkeydown="handleKey(event)" />
+      <button class="btn-green send-btn" onclick="sendMessage()">Send</button>
+    </div>
+  </div>
+
+  <div class="modal" id="developerModal">
+    <div class="modal-card">
+      <h2>Developer</h2>
+      <div class="info-box">
+        <p><strong>নাম:</strong> Kamrul Hasan</p>
+        <p><strong>Project:</strong> BkChatAi</p>
+        <p><strong>Country:</strong> Bangladesh</p>
+      </div>
+
+      <h3>জীবন বৃত্তান্ত</h3>
+      <p>
+        কামরুল হাসান একজন প্রযুক্তিপ্রেমী, ডিজিটাল ক্রিয়েটর এবং ওয়েব-ভিত্তিক
+        সিস্টেম নির্মাতা। তিনি AI tools, web development, automation,
+        online earning systems এবং modern digital solutions নিয়ে কাজ করেন।
+      </p>
+
+      <p>
+        তিনি সহজভাবে প্রযুক্তি শেখানো, ব্যবহারকারীদের জন্য কার্যকর ওয়েবসাইট তৈরি,
+        এবং নতুন নতুন AI-ভিত্তিক প্রজেক্ট তৈরি করতে আগ্রহী। BkChatAi তার একটি
+        নিজস্ব AI web project, যেখানে আধুনিক chat experience-এর সাথে developer identity
+        এবং personal branding যুক্ত করা হয়েছে।
+      </p>
+
+      <div class="info-box">
+        <p><strong>Facebook:</strong> <a class="link" href="https://www.facebook.com/k2m47l" target="_blank">facebook.com/k2m47l</a></p>
+        <p><strong>Telegram:</strong> <a class="link" href="https://t.me/KAMRULxORJINAL" target="_blank">t.me/KAMRULxORJINAL</a></p>
+        <p><strong>Email:</strong> <a class="link" href="mailto:kamrultc22@gmail.com">kamrultc22@gmail.com</a></p>
+      </div>
+
+      <div style="margin-top:16px;">
+        <button class="btn-green" onclick="closeDeveloper()">Close</button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const chat = document.getElementById("chat");
+    const input = document.getElementById("messageInput");
+
+    function openDeveloper() {
+      document.getElementById("developerModal").classList.add("active");
+    }
+
+    function closeDeveloper() {
+      document.getElementById("developerModal").classList.remove("active");
+    }
+
+    function startNewChat() {
+      chat.innerHTML = `
+        <div class="welcome-box">
+          <h2>নতুন চ্যাট শুরু হয়েছে</h2>
+          <p>এখন নতুন করে প্রশ্ন করতে পারো।</p>
+        </div>
+      `;
+      input.focus();
+    }
+
+    function addMessage(text, type, id = "") {
+      const div = document.createElement("div");
+      div.className = `message ${type}`;
+      if (id) div.id = id;
+      div.textContent = text;
+      chat.appendChild(div);
+      chat.scrollTop = chat.scrollHeight;
+    }
+
+    function handleKey(e) {
+      if (e.key === "Enter") sendMessage();
+    }
+
+    async function sendMessage() {
+      const text = input.value.trim();
+      if (!text) return;
+
+      addMessage(text, "user");
+      input.value = "";
+
+      const typingId = "typing-" + Date.now();
+      addMessage("BkChatAi is typing...", "bot typing", typingId);
+
+      try {
+        const res = await fetch("/.netlify/functions/chat", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ message: text })
+        });
+
+        const data = await res.json();
+        const typingEl = document.getElementById(typingId);
+        if (typingEl) typingEl.remove();
+
+        addMessage(data.reply || "কোনো উত্তর পাওয়া যায়নি।", "bot");
+      } catch (error) {
+        const typingEl = document.getElementById(typingId);
+        if (typingEl) typingEl.remove();
+
+        addMessage("সার্ভারে সমস্যা হয়েছে। পরে আবার চেষ্টা করো।", "bot");
+      }
+    }
+  </script>
+</body>
+</html>
