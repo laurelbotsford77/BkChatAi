@@ -3,6 +3,7 @@ exports.handler = async function (event) {
     if (event.httpMethod !== "POST") {
       return {
         statusCode: 405,
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ reply: "Method not allowed" })
       };
     }
@@ -36,12 +37,12 @@ exports.handler = async function (event) {
       };
     }
 
-    if (!process.env.OPENAI_API_KEY) {
+    if (!process.env.GEMINI_API_KEY) {
       return {
         statusCode: 200,
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          reply: "BkChatAi চালু আছে, কিন্তু এখনো OPENAI_API_KEY সেট করা হয়নি। তাই full AI response পাওয়া যাচ্ছে না। তবে creator সম্পর্কিত প্রশ্নের উত্তর আমি দিতে পারি।"
+          reply: "GEMINI_API_KEY সেট করা হয়নি। আগে Netlify environment variable-এ Gemini key বসাও।"
         })
       };
     }
@@ -57,30 +58,28 @@ exports.handler = async function (event) {
 বাংলা প্রশ্নের উত্তর বাংলায় দিবে।
     `.trim();
 
-    const response = await fetch("https://api.openai.com/v1/responses", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        "Authorization": `Bearer ${process.env.OPENAI_API_KEY}`
-      },
-      body: JSON.stringify({
-        model: "gpt-4.1-mini",
-        input: [
-          {
-            role: "system",
-            content: [
-              { type: "input_text", text: systemPrompt }
-            ]
-          },
-          {
-            role: "user",
-            content: [
-              { type: "input_text", text: userMessage }
-            ]
-          }
-        ]
-      })
-    });
+    const response = await fetch(
+      "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent",
+      {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "x-goog-api-key": process.env.GEMINI_API_KEY
+        },
+        body: JSON.stringify({
+          contents: [
+            {
+              role: "user",
+              parts: [
+                {
+                  text: `${systemPrompt}\n\nUser: ${userMessage}`
+                }
+              ]
+            }
+          ]
+        })
+      }
+    );
 
     const data = await response.json();
 
@@ -89,28 +88,14 @@ exports.handler = async function (event) {
         statusCode: 500,
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          reply: "AI response আনতে সমস্যা হয়েছে। Netlify environment variable আর API key ঠিক আছে কিনা চেক করো।"
+          reply: "Gemini response আনতে সমস্যা হয়েছে। API key ঠিক আছে কিনা আবার চেক করো।"
         })
       };
     }
 
-    let reply = "আমি এখন উত্তর দিতে পারছি না।";
-
-    if (data.output_text) {
-      reply = data.output_text;
-    } else if (data.output && Array.isArray(data.output)) {
-      const texts = [];
-      for (const item of data.output) {
-        if (item.content && Array.isArray(item.content)) {
-          for (const part of item.content) {
-            if (part.type === "output_text" && part.text) {
-              texts.push(part.text);
-            }
-          }
-        }
-      }
-      if (texts.length) reply = texts.join("\\n");
-    }
+    const reply =
+      data?.candidates?.[0]?.content?.parts?.[0]?.text ||
+      "আমি এখন উত্তর দিতে পারছি না।";
 
     return {
       statusCode: 200,
@@ -122,7 +107,7 @@ exports.handler = async function (event) {
       statusCode: 500,
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
-        reply: "Server error হয়েছে। function code বা API key আবার চেক করো।"
+        reply: "Server error হয়েছে। function code বা Gemini API key আবার চেক করো।"
       })
     };
   }
